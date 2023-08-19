@@ -15,10 +15,15 @@
 package main
 
 import (
+	"log"
+
 	_ "github.com/fatedier/frp/assets/frpc"
-	"github.com/fatedier/frp/cmd/frpc/sub"
+	//"github.com/fatedier/frp/cmd/frpc/sub"
 )
 
 func main() {
-	sub.Execute()
+	//sub.Execute()
+	if err := newRunner().run(); err != nil {
+		log.Fatal(err)
+	}
 }

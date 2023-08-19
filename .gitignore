@@ -34,5 +34,11 @@ dist/
 .idea/
 .vscode/
 
+cmd/frps/frps
+cmd/frps/frps.ini
+cmd/frpc/frpc
+cmd/frpc/frpc.ini
+cmd/frpc/config
+
 # Cache
 *.swp
