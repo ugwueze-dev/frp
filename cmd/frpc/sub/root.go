@@ -81,6 +81,11 @@ var (
 	tlsServerName string
 )
 
+type Client struct {
+	Addr    string
+	Service *client.Service
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "./frpc.ini", "config file of frpc")
 	rootCmd.PersistentFlags().StringVarP(&cfgDir, "config_dir", "", "", "config directory, run one frpc service for each file in config directory")
@@ -147,6 +152,27 @@ func runMultipleClients(cfgDir string) error {
 	return err
 }
 
+func GetMultipleClients(cfgDir string) ([]*Client, error) {
+	var clients []*Client
+
+	err := filepath.WalkDir(cfgDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+
+		client, err := GetClient(path)
+		if err != nil {
+			return err
+		}
+
+		clients = append(clients, client)
+
+		return nil
+	})
+
+	return clients, err
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -198,6 +224,23 @@ func parseClientCommonCfgFromCmd() (cfg config.ClientCommonConf, err error) {
 	return
 }
 
+func GetClient(cfgFilePath string) (*Client, error) {
+	cfg, pxyCfgs, visitorCfgs, err := config.ParseClientConfig(cfgFilePath)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	service, err := getService(cfg, pxyCfgs, visitorCfgs, cfgFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		Service: service,
+		Addr:    cfg.ConnectServerLocalIP,
+	}, nil
+}
+
 func runClient(cfgFilePath string) error {
 	cfg, pxyCfgs, visitorCfgs, err := config.ParseClientConfig(cfgFilePath)
 	if err != nil {
@@ -205,6 +248,34 @@ func runClient(cfgFilePath string) error {
 		return err
 	}
 	return startService(cfg, pxyCfgs, visitorCfgs, cfgFilePath)
+}
+
+func getService(
+	cfg config.ClientCommonConf,
+	pxyCfgs map[string]config.ProxyConf,
+	visitorCfgs map[string]config.VisitorConf,
+	cfgFile string,
+) (*client.Service, error) {
+	log.InitLog(cfg.LogWay, cfg.LogFile, cfg.LogLevel,
+		cfg.LogMaxDays, cfg.DisableLogColor)
+
+	if cfgFile != "" {
+		log.Info("start frpc service for config file [%s]", cfgFile)
+		defer log.Info("frpc service for config file [%s] stopped", cfgFile)
+	}
+	svr, errRet := client.NewService(cfg, pxyCfgs, visitorCfgs, cfgFile)
+	if errRet != nil {
+		//err := errRet
+		return nil, errRet
+	}
+
+	shouldGracefulClose := cfg.Protocol == "kcp" || cfg.Protocol == "quic"
+	// Capture the exit signal if we use kcp or quic.
+	if shouldGracefulClose {
+		go handleTermSignal(svr)
+	}
+
+	return svr, nil
 }
 
 func startService(
