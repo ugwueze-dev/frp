@@ -39,6 +39,7 @@ func init() {
 type HTTPProxy struct {
 	l          *Listener
 	s          *http.Server
+	conn       net.Conn
 	AuthUser   string
 	AuthPasswd string
 }
@@ -69,6 +70,7 @@ func (hp *HTTPProxy) Name() string {
 }
 
 func (hp *HTTPProxy) Handle(conn io.ReadWriteCloser, realConn net.Conn, _ []byte) {
+	hp.conn = realConn
 	wrapConn := utilnet.WrapReadWriteCloserToConn(conn, realConn)
 
 	sc, rd := libnet.NewSharedConn(wrapConn)
@@ -150,7 +152,13 @@ func (hp *HTTPProxy) ConnectHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	remote, err := net.Dial("tcp", req.URL.Host)
+	dialer, err := hp.getDialer()
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	remote, err := dialer.Dial("tcp", req.URL.Host)
 	if err != nil {
 		http.Error(rw, "Failed", http.StatusBadRequest)
 		client.Close()
@@ -200,7 +208,19 @@ func (hp *HTTPProxy) handleConnectReq(req *http.Request, rwc io.ReadWriteCloser)
 		return
 	}
 
-	remote, err := net.Dial("tcp", req.URL.Host)
+	dialer, err := hp.getDialer()
+	if err != nil {
+		res := &http.Response{
+			StatusCode: 400,
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+		}
+		_ = res.Write(rwc)
+		return
+	}
+
+	remote, err := dialer.Dial("tcp", req.URL.Host)
 	if err != nil {
 		res := &http.Response{
 			StatusCode: 400,
@@ -249,4 +269,18 @@ func getBadResponse() *http.Response {
 		Header:     header,
 	}
 	return res
+}
+
+func (hp *HTTPProxy) getDialer() (*net.Dialer, error) {
+	ip, _, err := net.SplitHostPort(hp.conn.LocalAddr().String())
+	if err != nil {
+		return nil, err
+	}
+
+	addrStr, err := net.ResolveTCPAddr("tcp", ip+":0")
+	if err != nil {
+		return nil, err
+	}
+
+	return &net.Dialer{LocalAddr: addrStr}, nil
 }
