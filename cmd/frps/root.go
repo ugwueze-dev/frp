@@ -63,6 +63,8 @@ var (
 	dashboardTLSCertFile string
 	dashboardTLSKeyFile  string
 	webhookURL           string
+	webServerAddr        string
+	webServerPort        int64
 )
 
 func init() {
@@ -95,6 +97,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&dashboardTLSCertFile, "dashboard_tls_cert_file", "", "", "dashboard tls cert file")
 	rootCmd.PersistentFlags().StringVarP(&dashboardTLSKeyFile, "dashboard_tls_key_file", "", "", "dashboard tls key file")
 	rootCmd.PersistentFlags().StringVarP(&webhookURL, "webhook_url", "w", "", "webhook")
+	rootCmd.PersistentFlags().StringVarP(&webServerAddr, "webserver_address", "", "", "web server address")
+	rootCmd.PersistentFlags().Int64VarP(&webServerPort, "webserver_port", "wsp", 9000, "web server port")
 }
 
 var rootCmd = &cobra.Command{
@@ -179,6 +183,8 @@ func parseServerCommonCfgFromCmd() (cfg config.ServerCommonConf, err error) {
 	cfg.SubDomainHost = subDomainHost
 	cfg.TLSOnly = tlsOnly
 	cfg.WebhookURL = webhookURL
+	cfg.WebServerAddr = webServerAddr
+	cfg.WebServerPort = webServerPort
 
 	// Only token authentication is supported in cmd mode
 	cfg.ServerConfig = auth.GetDefaultServerConf()

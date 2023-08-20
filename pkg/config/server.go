@@ -196,6 +196,10 @@ type ServerCommonConf struct {
 	NatHoleAnalysisDataReserveHours int64 `ini:"nat_hole_analysis_data_reserve_hours" json:"nat_hole_analysis_data_reserve_hours"`
 	// WebhookURL is the endpoint we send webhook events to
 	WebhookURL string `ini:"webhook_url" json:"webhook_url"`
+	// WebServerAddr is the address where the NIC reset command web server listens on
+	WebServerAddr string `ini:"web_server_addr" json:"web_server_addr"`
+	// WebServerPort is the port where the NIC reset command web server listens on
+	WebServerPort int64 `ini:"web_server_port" json:"web_server_port"`
 }
 
 // GetDefaultServerConf returns a server configuration with reasonable
@@ -227,6 +231,8 @@ func GetDefaultServerConf() ServerCommonConf {
 		UDPPacketSize:                   1500,
 		NatHoleAnalysisDataReserveHours: 7 * 24,
 		WebhookURL:                      "",
+		WebServerAddr:                   "",
+		WebServerPort:                   0,
 	}
 }
 
