@@ -345,3 +345,13 @@ func (pm *Manager) GetByName(name string) (pxy Proxy, ok bool) {
 	pxy, ok = pm.pxys[name]
 	return
 }
+
+func (pm *Manager) All() []Proxy {
+	var proxies []Proxy
+
+	for _, pxy := range pm.pxys {
+		proxies = append(proxies, pxy)
+	}
+
+	return proxies
+}

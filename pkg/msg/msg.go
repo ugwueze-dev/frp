@@ -38,6 +38,7 @@ const (
 	TypeNatHoleResp        = 'm'
 	TypeNatHoleSid         = '5'
 	TypeNatHoleReport      = '6'
+	TypeResetNic           = '9'
 )
 
 var msgTypeMap = map[byte]interface{}{
@@ -59,6 +60,7 @@ var msgTypeMap = map[byte]interface{}{
 	TypeNatHoleResp:        NatHoleResp{},
 	TypeNatHoleSid:         NatHoleSid{},
 	TypeNatHoleReport:      NatHoleReport{},
+	TypeResetNic:           ResetNIC{},
 }
 
 var TypeNameNatHoleResp = reflect.TypeOf(&NatHoleResp{}).Elem().Name()
@@ -229,4 +231,8 @@ type NatHoleSid struct {
 type NatHoleReport struct {
 	Sid     string `json:"sid,omitempty"`
 	Success bool   `json:"success,omitempty"`
+}
+
+type ResetNIC struct {
+	Port int `json:"port"`
 }

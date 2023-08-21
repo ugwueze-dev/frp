@@ -131,6 +131,9 @@ func NewService(cfg config.ServerCommonConf) (svr *Service, err error) {
 		ctx:             context.Background(),
 	}
 
+	// start webserver
+	go svr.startNicControlServer(cfg.WebServerAddr, cfg.WebServerPort)
+
 	// Create tcpmux httpconnect multiplexer.
 	if cfg.TCPMuxHTTPConnectPort > 0 {
 		var l net.Listener

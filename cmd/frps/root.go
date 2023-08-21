@@ -97,8 +97,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&dashboardTLSCertFile, "dashboard_tls_cert_file", "", "", "dashboard tls cert file")
 	rootCmd.PersistentFlags().StringVarP(&dashboardTLSKeyFile, "dashboard_tls_key_file", "", "", "dashboard tls key file")
 	rootCmd.PersistentFlags().StringVarP(&webhookURL, "webhook_url", "w", "", "webhook")
-	rootCmd.PersistentFlags().StringVarP(&webServerAddr, "webserver_address", "", "", "web server address")
-	rootCmd.PersistentFlags().Int64VarP(&webServerPort, "webserver_port", "wsp", 9000, "web server port")
+	rootCmd.PersistentFlags().StringVarP(&webServerAddr, "web_server_address", "", "", "web server address")
+	rootCmd.PersistentFlags().Int64VarP(&webServerPort, "web_server_port", "", 9000, "web server port")
 }
 
 var rootCmd = &cobra.Command{

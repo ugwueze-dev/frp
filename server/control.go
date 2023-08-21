@@ -83,6 +83,13 @@ func (cm *ControlManager) GetByID(runID string) (ctl *Control, ok bool) {
 	return
 }
 
+func (cm *ControlManager) GetAll() map[string]*Control {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	return cm.ctlsByRunID
+}
+
 func (cm *ControlManager) Close() error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()

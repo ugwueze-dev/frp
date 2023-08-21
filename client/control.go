@@ -18,7 +18,11 @@ import (
 	"context"
 	"io"
 	"net"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/fatedier/golib/control/shutdown"
@@ -327,6 +331,10 @@ func (ctl *Control) msgHandler() {
 				}
 				ctl.lastPong = time.Now()
 				xl.Debug("receive heartbeat from server")
+			case *msg.ResetNIC:
+				mg := rawMsg.(*msg.ResetNIC)
+				xl.Info("command received to reset NIC with remote port %d", mg.Port)
+				ctl.resetNIC(mg)
 			}
 		}
 	}
@@ -358,4 +366,28 @@ func (ctl *Control) ReloadConf(pxyCfgs map[string]config.ProxyConf, visitorCfgs 
 	ctl.vm.Reload(visitorCfgs)
 	ctl.pm.Reload(pxyCfgs)
 	return nil
+}
+
+func (ctl *Control) resetNIC(m *msg.ResetNIC) {
+	tplStr, err := os.ReadFile("changeip.bat")
+	if err != nil {
+		ctl.xl.Error("error opening NIC reset file: %s", err.Error())
+		return
+	}
+
+	str := strings.Replace(string(tplStr), "{ipaddress}", ctl.clientCfg.ConnectServerLocalIP, 2)
+	changeIPTempFileName := ctl.clientCfg.ConnectServerLocalIP + ".bat"
+
+	if err := os.WriteFile(changeIPTempFileName, []byte(str), 0666); err != nil {
+		ctl.xl.Error("error writing temp NIC reset file bat file: %s", err.Error())
+		return
+	}
+	defer os.Remove(changeIPTempFileName)
+
+	wd, _ := os.Getwd()
+	absPath := filepath.Join(wd, changeIPTempFileName)
+	_, err = exec.Command("cmd", "/C", absPath).CombinedOutput()
+	if err != nil {
+		ctl.xl.Error("error executing NIC reset file: %s", err.Error())
+	}
 }
